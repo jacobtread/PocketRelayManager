@@ -1,5 +1,5 @@
-import React from 'react';
-import './assets/App.css';
+import React from "react";
+import "./assets/App.css";
 import AuthProvider from "./components/AuthProvider";
 import { Route, Routes } from "react-router-dom";
 import AuthRoute from "./routes/AuthRoute";
