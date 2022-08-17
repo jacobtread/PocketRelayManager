@@ -13,52 +13,57 @@ interface AuthState {
     action: Action
     error: string;
     serverVersion: string;
-    address: string;
     username: string;
     password: string;
 }
 
 
-interface StatusResponse {
+export interface StatusResponse {
     identity: string;
     version: string;
 }
 
-interface AuthResponse {
-    success: boolean;
+export interface AuthResponse {
+    success: string;
     token: string;
 }
 
 const AuthRoute: FunctionComponent = () => {
-    const {setToken} = useAuth()
+    const {request, address, setAddress, setToken} = useAuth()
     const navigate = useNavigate()
 
     const [state, setState] = useState<AuthState>({
         action: Action.BASE,
         error: "",
         serverVersion: "",
-        address: "",
         username: "",
         password: ""
     });
 
-    const setAction = (action: Action) => setState({...state, action})
+    const setAction = (action: Action) => setState({...state, action, error: ""})
     const setError = (error: string) => setState({...state, error})
-    const clearError = () => setState({...state, error: ""})
 
-    const onStateChange = (event: ChangeEvent<HTMLInputElement>) => setState({
-        ...state,
-        [event.target.name]: event.target.value
-    })
+    const onStateChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const target = event.target
+        const {name, value} = target
+        setState({
+            ...state,
+            [name]: value
+        })
+    }
 
+    const onAddressChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setAddress(event.target.value)
+    }
 
     const tryConnectAddress = async () => {
         setAction(Action.CONNECTING)
-        const address = state.address
-        // noinspection HttpUrlsUsage
+        // TODO: Validate address
         try {
-            const statusResponse: StatusResponse = await fetch(`http://${address}/api/status`)
-                .then((res) => res.json())
+            const statusResponse = await request<StatusResponse>({
+                method: "GET",
+                path: "status"
+            })
             if (statusResponse.identity === "KME_SERVER") {
                 setState({
                     ...state,
@@ -78,17 +83,13 @@ const AuthRoute: FunctionComponent = () => {
 
     async function tryAuthenticate() {
         setAction(Action.AUTHENTICATING)
-        const {address, username, password} = state
+        const {username, password} = state
         try {
-            const authResponse: AuthResponse = await fetch(`http://${address}/api/auth`, {
+            const authResponse = await request<AuthResponse>({
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    username,
-                    password
-                })
+                path: "auth",
+                body: {username, password}
             })
-                .then((res) => res.json())
             if (authResponse.success) {
                 setToken(authResponse.token)
                 navigate("/")
@@ -113,8 +114,8 @@ const AuthRoute: FunctionComponent = () => {
                             <span>Server Address</span>
                             <input type="text"
                                    name="address"
-                                   onChange={onStateChange}
-                                   value={state.address}/>
+                                   onChange={onAddressChange}
+                                   value={address}/>
                         </label>
 
                         <button onClick={tryConnectAddress}>
