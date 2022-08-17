@@ -40,9 +40,6 @@ const AuthRoute: FunctionComponent = () => {
         password: ""
     });
 
-    const setAction = (action: Action) => setState({...state, action, error: ""})
-    const setError = (error: string) => setState({...state, error})
-
     const onStateChange = (event: ChangeEvent<HTMLInputElement>) => {
         const target = event.target
         const {name, value} = target
@@ -57,7 +54,7 @@ const AuthRoute: FunctionComponent = () => {
     }
 
     const tryConnectAddress = async () => {
-        setAction(Action.CONNECTING)
+        setState({...state, action: Action.CONNECTING, error: ""})
         // TODO: Validate address
         try {
             const statusResponse = await request<StatusResponse>({
@@ -68,21 +65,19 @@ const AuthRoute: FunctionComponent = () => {
                 setState({
                     ...state,
                     action: Action.CONNECTED,
-                    serverVersion: statusResponse.version
+                    serverVersion: statusResponse.version,
                 })
             } else {
-                setError("Not a KME server")
-                setAction(Action.BASE)
+                setState({...state, action: Action.BASE, error: "Not a KME server"})
             }
         } catch (e) {
             console.error(e)
-            setError("Failed to connect to server")
-            setAction(Action.BASE)
+            setState({...state, action: Action.BASE, error: "Failed to connect to server"})
         }
     }
 
     async function tryAuthenticate() {
-        setAction(Action.AUTHENTICATING)
+        setState({...state, action: Action.AUTHENTICATING, error: ""})
         const {username, password} = state
         try {
             const authResponse = await request<AuthResponse>({
@@ -95,13 +90,11 @@ const AuthRoute: FunctionComponent = () => {
                 navigate("/")
                 return
             } else {
-                setError("Not a KME server")
-                setAction(Action.CONNECTED)
+                setState({...state, action: Action.CONNECTED, error: "Invalid credentials"})
             }
         } catch (e) {
             console.error(e)
-            setError("Failed to authenticate")
-            setAction(Action.CONNECTED)
+            setState({...state, action: Action.CONNECTED, error: "Failed to authenticate"})
         }
     }
 
